@@ -2,10 +2,20 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as dat from "dat.gui";
+
+/**
+ * GUI
+ * **/
+
+// add tweak after we declared our variables
+
+const gui = new dat.GUI();
+
 /**
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
+const CubeTextureLoader = new THREE.CubeTextureLoader();
 
 const doorColorTexture = textureLoader.load("/textures/door/color.jpg");
 const doorAlphaTexture = textureLoader.load("/textures/door/alpha.jpg");
@@ -18,6 +28,21 @@ const doorMetalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
 const doorRoughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
 const matcapTexture = textureLoader.load("/textures/matcaps/1.png");
 const gradientTexture = textureLoader.load("/textures/gradients/3.jpg");
+
+// will provide 6 paths
+const environmentMapTexture = cubeTextureLoader.load([
+  "/textures/environmentMaps/0/px.jpg",
+  "/textures/environmentMaps/0/nx.jpg",
+  "/textures/environmentMaps/0/py.jpg",
+  "/textures/environmentMaps/0/ny.jpg",
+  "/textures/environmentMaps/0/pz.jpg",
+  "/textures/environmentMaps/0/nz.jpg",
+]);
+
+const material = new THREE.MeshStandardMaterial();
+material.metalnesss = 0.7;
+material.roughness = 0.2;
+material.envMap = environmentMapTexture;
 
 /**
  * Base
@@ -163,27 +188,86 @@ material.gradientMap = gradientTexture;
 // we will use this alot
 
 const material = new THREE.MeshStandardMaterial();
-material.metalness = 0.45;
-material.roughness = 0.65;
+/**
+ * commenting these out because we are using metalnessMap and rougenessMap
+ *  **/
+// material.metalness = 0.45;
+// material.roughness = 0.65;
+material.map = doorColorTexture;
+material.aoMap = doorAmbientOcclusionTexture;
+material.aoMapIntensity = 1;
+// looks terrible because it lacks vertices and the displacement is way too strong
+material.displacementMap = doorHeightTexture;
+material.displacementScale = 0.1;
+material.metalnessMap = doorMetalnessTexture;
+material.roughnessMap = doorRoughnessTexture;
+material.normalMap = doorNormalTexture;
+// normalScale is a vector2
+// material.normalScale.x
+material.normalScale.set(0.5, 0.5);
+// when we use alpha we want to use transparent
+material.transparent = true;
+material.alphaMap = doorAlphaTexture;
+
+gui.add(material, "metalness").min(0).max(1).step(0.0001);
+gui.add(material, "roughness").min(0).max(1).step(0.0001);
+gui.add(material, "aoMapIntensity").min(0).max(10).step(0.0001);
+gui.add(material, "displacementScale").min(0).max(1).step(0.0001);
+
+/** 
+ * Mesh Physical Material same MeshStandardMaterial but with support for clear coat effect
+ * material.metalness = 0.7
+material.roughness = 0.2
+gui.add(material, 'metalness').min(0).max(1).step(0.0001)
+gui.add(material, 'roughness').min(0).max(1).step(0.0001)
+ * **/
+
+// have to use CubeTextureLoader
 
 /***
  * Add debug ui
  *  ***/
 
+/**
+ * Points Material
+ * **/
+
+// use pointsMaterial with particles
+
+/**
+ * Environment map
+ * is an image of what's surrounding the scene
+ * **/
+
+//
+
 const sphere = new THREE.Mesh(
   new THREE.SphereBufferGeometry(0.5, 16, 16),
   material
+);
+sphere.geometry.setAttribute(
+  "uv2",
+  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
 );
 
 sphere.position.x = 1.5;
 
 const plane = new THREE.Mesh(new THREE.PlaneBufferGeometry(1, 1), material);
 
+plane.geometry.setAttribute(
+  "uv2",
+  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
+);
+
 const torus = new THREE.Mesh(
   new THREE.TorusBufferGeometry(0.3, 0.2, 16, 32),
   material
 );
 
+torus.geometry.setAttribute(
+  "uv2",
+  new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
+);
 torus.position.x = 1.5;
 
 // adding multiple objects
